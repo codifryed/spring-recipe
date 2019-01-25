@@ -1,6 +1,9 @@
 package com.guyboldon.recipe.domain;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Entity
@@ -16,13 +19,15 @@ public class Recipe {
     private Integer servings;
     private String source;
     private String url;
+
+    @Lob
     private String directions;
 
     @Enumerated(value = EnumType.STRING)
     private Difficulty difficulty;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "recipe")
-    private Set<Ingredient> ingredients;
+    private Set<Ingredient> ingredients = new HashSet<>();
 
     @Lob
     private Byte[] image;
@@ -34,7 +39,8 @@ public class Recipe {
     @JoinTable(name = "recipe_category",
             joinColumns = @JoinColumn(name = "recipe_id"),
             inverseJoinColumns = @JoinColumn(name = "category_id"))
-    private Set<Category> categories;
+    private Set<Category> categories = new HashSet<>();
+
 
     public Set<Ingredient> getIngredients() {
         return ingredients;
@@ -122,6 +128,22 @@ public class Recipe {
 
     public void setNotes(Notes notes) {
         this.notes = notes;
+        notes.setRecipe(this);
+    }
+
+    public Recipe addIngredient(Ingredient ingredient) {
+        ingredient.setRecipe(this);
+        this.getIngredients().add(ingredient);
+        return this;
+    }
+
+    public Recipe addIngredient(String description, Double amount, UnitOfMeasure unitOfMeasure) {
+        Ingredient ingredient = new Ingredient(description, BigDecimal.valueOf(amount), unitOfMeasure);
+        return addIngredient(ingredient);
+    }
+
+    public Optional<Recipe> removeIngredient(Ingredient ingredient) {
+        return this.getIngredients().remove(ingredient) ? Optional.of(this) : Optional.empty();
     }
 
     public Difficulty getDifficulty() {
